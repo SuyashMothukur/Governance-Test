@@ -14,7 +14,7 @@ declare global {
     interface User extends SelectUser {}
   }
 }
-
+//fewjfjkewnfkjewfnjkew
 const scryptAsync = promisify(scrypt);
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
