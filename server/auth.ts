@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import connectPg from "connect-pg-simple";
+import type { Pool } from "@neondatabase/serverless";
 import { pool } from "./db";
 
 declare global {
@@ -14,7 +15,7 @@ declare global {
     interface User extends SelectUser {}
   }
 }
-//gtregtrg
+
 const scryptAsync = promisify(scrypt);
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -43,7 +44,7 @@ export function setupAuth(app: Express) {
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: new PostgresSessionStore({
-      pool,
+      pool: pool as Pool,
       createTableIfMissing: true,
       tableName: "session"
     })
@@ -111,10 +112,9 @@ export function setupAuth(app: Express) {
         password: hashedPassword
       });
 
-      // Don't send password back to client
+      // Don't send password back to client (Express.User is same shape; session stores without password)
       const { password: _, ...userWithoutPassword } = user;
-      
-      req.login(userWithoutPassword, (err) => {
+      req.login(userWithoutPassword as Express.User, (err: Error | null) => {
         if (err) {
           return res.status(500).json({ message: "Error logging in after registration" });
         }
@@ -126,7 +126,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message?: string }) => {
       if (err) {
         return res.status(500).json({ message: "Internal server error" });
       }

@@ -16,7 +16,7 @@ function requireAuth(req: Request, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
-  setupAuth(app);cdscds
+  setupAuth(app);
 
   app.post("/api/analyze", async (req, res) => {
     try {
@@ -490,7 +490,13 @@ function extractRecommendations(text: string): any[] {
       const colorMatch = sectionText.match(/Color[s]?:?\s*([^\n]+)/i);
       const ingredientsMatch = sectionText.match(/Ingredient[s]?:?\s*([^\n]+)/i);
       
-      const recommendation = {
+      const recommendation: {
+        category: string;
+        productType: string;
+        reason: string;
+        priority: number;
+        ingredients: string[];
+      } = {
         category: section.category,
         productType: section.type,
         reason: `Recommended for your ${section.category} needs`,

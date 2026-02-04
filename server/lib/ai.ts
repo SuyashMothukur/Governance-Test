@@ -26,7 +26,8 @@ export async function analyzeFacialFeatures(base64Image: string): Promise<Facial
   try {
     console.log('Starting Ollama analysis with base64 image...');
 
-    const ollama = new Ollama({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ollama = new (Ollama as any)({
       host: 'http://localhost:11434'
     });
 

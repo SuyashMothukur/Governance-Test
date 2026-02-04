@@ -33,13 +33,24 @@ interface AnalysisData {
   concerns: string[];
   features: AnalysisFeatures;
   recommendations: AnalysisRecommendation[];
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+/** API response shape for GET /api/analysis/:id */
+interface AnalysisApiResponse {
+  analysis?: string;
+  createdAt?: string | Date;
+  skinType?: string;
+  undertone?: string | null;
+  concerns?: string[] | string;
+  recommendations?: unknown;
+  [key: string]: unknown;
 }
 
 export default function Analysis() {
   const { id } = useParams();
 
-  const analysisQuery = useQuery({
+  const analysisQuery = useQuery<AnalysisApiResponse>({
     queryKey: ["/api/analysis", id],
     enabled: !!id
   });
@@ -138,20 +149,21 @@ export default function Analysis() {
                 // Determine what format the data is in and convert accordingly
                 if (rawData.analysis) {
                   // If it's in the raw text format, we need to handle it
-                  let analysis = rawData.analysis;
+                  let analysis = rawData.analysis as string;
                   
                   // If analysis is a string that looks like JSON, try to parse it
                   if (typeof analysis === 'string') {
                     try {
                       if (analysis.trim().startsWith('{') || analysis.trim().startsWith('[')) {
-                        analysisData = JSON.parse(analysis);
+                        analysisData = JSON.parse(analysis) as AnalysisData;
                       } else {
                         // It's not JSON, so display as plain text
+                        const createdAt = rawData.createdAt != null ? new Date(rawData.createdAt as string | Date).toLocaleDateString() : '—';
                         return (
                           <div className="space-y-4">
                             <div className="flex items-center space-x-2 mb-4">
-                              <Badge>Analysis Date: {new Date(rawData.createdAt).toLocaleDateString()}</Badge>
-                              {rawData.skinType && <Badge variant="outline">Skin Type: {rawData.skinType}</Badge>}
+                              <Badge>Analysis Date: {createdAt}</Badge>
+                              {rawData.skinType && <Badge variant="outline">Skin Type: {String(rawData.skinType)}</Badge>}
                             </div>
                             <pre className="whitespace-pre-wrap font-sans text-base bg-muted/30 p-4 rounded-md">
                               {analysis}
@@ -162,11 +174,12 @@ export default function Analysis() {
                     } catch (e) {
                       console.error("Failed to parse analysis JSON:", e);
                       // Fallback to text display
+                      const createdAtFallback = rawData.createdAt != null ? new Date(rawData.createdAt as string | Date).toLocaleDateString() : '—';
                       return (
                         <div className="space-y-4">
                           <div className="flex items-center space-x-2 mb-4">
-                            <Badge>Analysis Date: {new Date(rawData.createdAt).toLocaleDateString()}</Badge>
-                            {rawData.skinType && <Badge variant="outline">Skin Type: {rawData.skinType}</Badge>}
+                            <Badge>Analysis Date: {createdAtFallback}</Badge>
+                            {rawData.skinType && <Badge variant="outline">Skin Type: {String(rawData.skinType)}</Badge>}
                           </div>
                           <pre className="whitespace-pre-wrap font-sans text-base bg-muted/30 p-4 rounded-md">
                             {analysis}
@@ -177,11 +190,11 @@ export default function Analysis() {
                   }
                 } else {
                   // The data might be directly in the format we want
-                  analysisData = rawData;
+                  analysisData = rawData as AnalysisData;
                 }
                 
                 // Now that we have the parsed data, display it appropriately
-                if (analysisData) {
+                if (analysisData && typeof analysisData.skinType === 'string' && Array.isArray(analysisData.concerns) && analysisData.features && Array.isArray(analysisData.recommendations)) {
                   return (
                     <div className="space-y-8">
                       {/* Skin Type Section */}
